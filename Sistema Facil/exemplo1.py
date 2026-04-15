@@ -75,7 +75,7 @@ class Student:
         x_scroll = tk.Scrollbar(self.tab_frame, orient="horizontal")
         v_scroll = tk.Scrollbar(self.tab_frame, orient="vertical")
 
-        self.table = ttk.Treeview(self.tab_frame, columns=("roll", "name", "fname", "sub", "grade"),
+        self.table = ttk.Treeview(self.tab_frame, columns=("numero", "nome", "mnome", "classe", "turno"),
                                   xscrollcommand=x_scroll.set, yscrollcommand=v_scroll.set)
         
         x_scroll.pack(side="bottom", fill="x")
@@ -159,7 +159,7 @@ class Student:
     def search_function(self):
         try:
             self.db_function()
-            query = f"select * from student where {self.search_opt.get()} = %s"
+            query = f"select * from aluno where {self.search_opt.get()} = %s"
             self.cursor.execute(query, (self.search_val.get()))
             rows = self.cursor.fetchall()
             if len(rows)!=0:
@@ -175,7 +175,7 @@ class Student:
     def show_all(self):
         try:
             self.db_function()
-            self.cursor.execute("select * from student")
+            self.cursor.execute("select * from aluno")
             rows = self.cursor.fetchall()
             self.table.delete(*self.table.get_children())
             for row in rows:
@@ -208,7 +208,7 @@ class Student:
     def update_function(self):
         try:
             self.db_function()
-            query = f"update student set {self.upd_opt.get()} = %s where roll_number = %s"
+            query = f"update aluno set {self.upd_opt.get()} = %s where numero = %s"
             self.cursor.execute(query, (self.upd_val.get(), self.upd_roll.get()))
             self.con.commit()
             messagebox.showinfo("Successo", "Atualizado com Sucesso")
@@ -233,7 +233,7 @@ class Student:
     def delete_function(self):
         try:
             self.db_function()
-            query = "delete from student where roll_number = %s"
+            query = "delete from aluno where numero = %s"
             self.cursor.execute(query, (self.del_roll.get()))
             self.con.commit()
             messagebox.showinfo("Successo", f"Aluno {self.del_roll.get()} removido")
