@@ -3,247 +3,250 @@ from tkinter import ttk
 from tkinter import messagebox
 import pymysql
 
-class Student:
+class Estudante:
     def __init__(self, root):
         self.root = root
-        self.root.title("Bando de Dados de Alunos")
+        self.root.title("Registro de Estudantes")
         
-        # Variáveis globais para dimensões da tela
-        self.width = self.root.winfo_screenwidth()
-        self.height = self.root.winfo_screenheight()
-        self.root.geometry(f"{self.width}x{self.height}+0+0")
+        # Variáveis globais para as dimensões da tela
+        self.largura = self.root.winfo_screenwidth()
+        self.altura = self.root.winfo_screenheight()
+        self.root.geometry(f"{self.largura}x{self.altura}+0+0")
 
-        # Título principal
-        title = tk.Label(self.root, text="Banco de Dados de Alunos", bd=4, relief="raised", 
-                         bg="lightgreen", font=("elephant", 40, "bold"))
-        title.pack(side="top", fill="x")
+        # Título principal da interface
+        titulo = tk.Label(self.root, text="Sistema de Gerenciamento de Registros de Estudantes", bd=4, relief="raised", 
+                         bg="lightgreen", font=("elephant", 30, "bold"))
+        titulo.pack(side="top", fill="x")
 
-        # Função auxiliar para gerar cores hexadecimais
-        def color(self, r, g, b):
+        # Função auxiliar para gerar cores hexadecimais (RGB para Hex)
+        def cor(self, r, g, b):
             return f'#{r:02x}{g:02x}{b:02x}'
 
-        # Frame de Opções (Esquerda)
-        self.opt_frame = tk.Frame(self.root, bd=5, relief="raised", bg=self.color(230, 150, 200))
-        self.opt_frame.place(x=50, y=100, width=self.width//3, height=self.height-180)
+        # Painel de Opções (Lado Esquerdo)
+        self.quadro_opcoes = tk.Frame(self.root, bd=5, relief="raised", bg=self.cor_rgb(230, 150, 200))
+        self.quadro_opcoes.place(x=50, y=100, width=self.largura//3, height=self.altura-180)
 
-        # Botões do Frame de Opções
-        add_btn = tk.Button(self.opt_frame, text="Adicionar Aluno", bd=3, relief="raised", bg="lightgrey",
-                            width=20, font=("arial", 15, "bold"), command=self.add_frame_function)
-        add_btn.grid(row=0, column=0, padx=30, pady=25)
+        # Botões do Painel de Opções
+        btn_adicionar = tk.Button(self.quadro_opcoes, text="Adicionar Estudante", bd=3, relief="raised", bg="lightgrey",
+                            width=20, font=("arial", 15, "bold"), command=self.funcao_quadro_adicionar)
+        btn_adicionar.grid(row=0, column=0, padx=30, pady=25)
 
-        search_btn = tk.Button(self.opt_frame, text="Buscar Aluno", bd=3, relief="raised", bg="lightgrey",
-                               width=20, font=("arial", 15, "bold"), command=self.search_frame_function)
-        search_btn.grid(row=1, column=0, padx=30, pady=25)
+        btn_buscar = tk.Button(self.quadro_opcoes, text="Buscar Estudante", bd=3, relief="raised", bg="lightgrey",
+                               width=20, font=("arial", 15, "bold"), command=self.funcao_quadro_busca)
+        btn_buscar.grid(row=1, column=0, padx=30, pady=25)
 
-        update_btn = tk.Button(self.opt_frame, text="Atualizar Informações", bd=3, relief="raised", bg="lightgrey",
-                               width=20, font=("arial", 15, "bold"), command=self.update_frame_function)
-        update_btn.grid(row=2, column=0, padx=30, pady=25)
+        btn_atualizar = tk.Button(self.quadro_opcoes, text="Atualizar Registro", bd=3, relief="raised", bg="lightgrey",
+                               width=20, font=("arial", 15, "bold"), command=self.funcao_quadro_atualizar)
+        btn_atualizar.grid(row=2, column=0, padx=30, pady=25)
 
-        show_all_btn = tk.Button(self.opt_frame, text="Mostrar Tudo", bd=3, relief="raised", bg="lightgrey",
-                                 width=20, font=("arial", 15, "bold"), command=self.show_all)
-        show_all_btn.grid(row=3, column=0, padx=30, pady=25)
+        btn_mostrar_todos = tk.Button(self.quadro_opcoes, text="Mostrar Todos", bd=3, relief="raised", bg="lightgrey",
+                                 width=20, font=("arial", 15, "bold"), command=self.mostrar_todos)
+        btn_mostrar_todos.grid(row=3, column=0, padx=30, pady=25)
 
-        delete_btn = tk.Button(self.opt_frame, text="Remover Aluno", bd=3, relief="raised", bg="lightgrey",
-                               width=20, font=("arial", 15, "bold"), command=self.del_frame_function)
-        delete_btn.grid(row=4, column=0, padx=30, pady=25)
+        btn_remover = tk.Button(self.quadro_opcoes, text="Remover Estudante", bd=3, relief="raised", bg="lightgrey",
+                               width=20, font=("arial", 15, "bold"), command=self.funcao_quadro_remover)
+        btn_remover.grid(row=4, column=0, padx=30, pady=25)
 
-        # Frame de Detalhes (Direita)
-        self.detail_frame = tk.Frame(self.root, bd=5, relief="raised", bg=self.color(150, 230, 120))
-        self.detail_frame.place(x=(self.width//3)+100, y=100, width=(self.width//2)+50, height=self.height-180)
+        # Painel de Detalhes e Visualização (Lado Direito)
+        self.quadro_detalhes = tk.Frame(self.root, bd=5, relief="raised", bg=self.cor_rgb(150, 230, 120))
+        self.quadro_detalhes.place(x=(self.largura//3)+100, y=100, width=(self.largura//2)+50, height=self.altura-180)
 
-        lbl_detail = tk.Label(self.detail_frame, text="Detalhes do Arquivo", font=("arial", 30, "bold"), 
-                              bg=self.color(150, 230, 120))
-        lbl_detail.pack(side="top", fill="x")
+        lbl_detalhe = tk.Label(self.quadro_detalhes, text="Detalhes do Registro", font=("arial", 30, "bold"), 
+                              bg=self.cor_rgb(150, 230, 120))
+        lbl_detalhe.pack(side="top", fill="x")
 
-        # Chamada da função da tabela
-        self.tab_function()
+        # Inicialização da tabela de dados
+        self.funcao_tabela()
 
-    def color(self, r, g, b):
+    def cor_rgb(self, r, g, b):
         return f'#{r:02x}{g:02x}{b:02x}'
 
-    def db_function(self):
+    def funcao_banco_dados(self):
+        """Estabelece conexão com o servidor MySQL local"""
         try:
-            self.con = pymysql.connect(host="localhost", user="root", password="", database="record")
-            self.cursor = self.con.cursor()
+            self.conexao = pymysql.connect(host="localhost", user="root", password="SUA_SENHA_AQUI", database="registro")
+            self.cursor = self.conexao.cursor()
         except Exception as e:
-            messagebox.showerror("Error", f"Error: {e}")
+            messagebox.showerror("Erro de Conexão", f"Não foi possível conectar ao banco de dados: {e}")
 
-    def tab_function(self):
-        self.tab_frame = tk.Frame(self.detail_frame, bd=4, relief="sunken", bg="cyan")
-        self.tab_frame.place(x=23, y=70, width=(self.width//2), height=self.height-280)
+    def funcao_tabela(self):
+        """Configura a visualização da tabela (Treeview) e barras de rolagem"""
+        self.quadro_tab = tk.Frame(self.quadro_detalhes, bd=4, relief="sunken", bg="cyan")
+        self.quadro_tab.place(x=23, y=70, width=(self.largura//2), height=self.altura-280)
 
-        x_scroll = tk.Scrollbar(self.tab_frame, orient="horizontal")
-        v_scroll = tk.Scrollbar(self.tab_frame, orient="vertical")
+        barra_rolagem_x = tk.Scrollbar(self.quadro_tab, orient="horizontal")
+        barra_rolagem_v = tk.Scrollbar(self.quadro_tab, orient="vertical")
 
-        self.table = ttk.Treeview(self.tab_frame, columns=("numero", "nome", "mnome", "classe", "turno"),
-                                  xscrollcommand=x_scroll.set, yscrollcommand=v_scroll.set)
+        self.tabela = ttk.Treeview(self.quadro_tab, columns=("matricula", "nome", "nome_pai", "disciplina", "nota"),
+                                  xscrollcommand=barra_rolagem_x.set, yscrollcommand=barra_rolagem_v.set)
         
-        x_scroll.pack(side="bottom", fill="x")
-        v_scroll.pack(side="right", fill="y")
+        barra_rolagem_x.pack(side="bottom", fill="x")
+        barra_rolagem_v.pack(side="right", fill="y")
         
-        x_scroll.config(command=self.table.xview)
-        v_scroll.config(command=self.table.yview)
+        barra_rolagem_x.config(command=self.tabela.xview)
+        barra_rolagem_v.config(command=self.tabela.yview)
 
-        self.table.heading("roll", text="Número")
-        self.table.heading("name", text="Nome")
-        self.table.heading("fname", text="Nome da Mãe")
-        self.table.heading("sub", text="Classe")
-        self.table.heading("grade", text="Turno")
+        # Cabeçalhos da Tabela
+        self.tabela.heading("matricula", text="Nº Matrícula")
+        self.tabela.heading("nome", text="Nome Completo")
+        self.tabela.heading("nome_pai", text="Nome do Pai")
+        self.tabela.heading("disciplina", text="Disciplina")
+        self.tabela.heading("nota", text="Menção/Nota")
         
-        self.table["show"] = "headings"
-        self.table.pack(fill="both", expand=1)
+        self.tabela["show"] = "headings"
+        self.tabela.pack(fill="both", expand=1)
 
-    # --- Funções para Adicionar ---
-    def add_frame_function(self):
-        self.add_f_frame = tk.Frame(self.root, bd=5, relief="raised", bg=self.color(150, 180, 255))
-        self.add_f_frame.place(x=(self.width//3)+80, y=100, width=self.width//3, height=self.height-220)
+    # --- Operação: ADICIONAR ---
+    def funcao_quadro_adicionar(self):
+        self.quadro_cad_estudante = tk.Frame(self.root, bd=5, relief="raised", bg=self.cor_rgb(150, 180, 255))
+        self.quadro_cad_estudante.place(x=(self.largura//3)+80, y=100, width=self.largura//3, height=self.altura-220)
 
-        # Labels e Entries para cadastro
-        tk.Label(self.add_f_frame, text="Número:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=25)
-        self.roll_no_var = tk.Entry(self.add_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.roll_no_var.grid(row=0, column=1, padx=10, pady=25)
+        # Campos de Entrada (Labels e Entries)
+        tk.Label(self.quadro_cad_estudante, text="Matrícula:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=25)
+        self.var_matricula = tk.Entry(self.quadro_cad_estudante, width=18, font=("arial", 15, "bold"), bd=3)
+        self.var_matricula.grid(row=0, column=1, padx=10, pady=25)
 
-        tk.Label(self.add_f_frame, text="Nome:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=1, column=0, padx=20, pady=25)
-        self.name_var = tk.Entry(self.add_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.name_var.grid(row=1, column=1, padx=10, pady=25)
+        tk.Label(self.quadro_cad_estudante, text="Nome:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=1, column=0, padx=20, pady=25)
+        self.var_nome = tk.Entry(self.quadro_cad_estudante, width=18, font=("arial", 15, "bold"), bd=3)
+        self.var_nome.grid(row=1, column=1, padx=10, pady=25)
 
-        tk.Label(self.add_f_frame, text="Nome da Mãe:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=2, column=0, padx=20, pady=25)
-        self.fname_var = tk.Entry(self.add_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.fname_var.grid(row=2, column=1, padx=10, pady=25)
+        tk.Label(self.quadro_cad_estudante, text="Nome do Pai:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=2, column=0, padx=20, pady=25)
+        self.var_nome_pai = tk.Entry(self.quadro_cad_estudante, width=18, font=("arial", 15, "bold"), bd=3)
+        self.var_nome_pai.grid(row=2, column=1, padx=10, pady=25)
 
-        tk.Label(self.add_f_frame, text="Classe:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=3, column=0, padx=20, pady=25)
-        self.subject_var = tk.Entry(self.add_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.subject_var.grid(row=3, column=1, padx=10, pady=25)
+        tk.Label(self.quadro_cad_estudante, text="Disciplina:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=3, column=0, padx=20, pady=25)
+        self.var_disciplina = tk.Entry(self.quadro_cad_estudante, width=18, font=("arial", 15, "bold"), bd=3)
+        self.var_disciplina.grid(row=3, column=1, padx=10, pady=25)
 
-        tk.Label(self.add_f_frame, text="Turno:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=4, column=0, padx=20, pady=25)
-        self.grade_var = tk.Entry(self.add_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.grade_var.grid(row=4, column=1, padx=10, pady=25)
+        tk.Label(self.quadro_cad_estudante, text="Nota/Menção:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=4, column=0, padx=20, pady=25)
+        self.var_nota = tk.Entry(self.quadro_cad_estudante, width=18, font=("arial", 15, "bold"), bd=3)
+        self.var_nota.grid(row=4, column=1, padx=10, pady=25)
 
-        enter_btn = tk.Button(self.add_f_frame, text="Enter", width=20, font=("arial", 20, "bold"), command=self.add_function)
-        enter_btn.grid(row=5, column=0, columnspan=2, pady=25)
+        btn_confirmar = tk.Button(self.quadro_cad_estudante, text="Cadastrar", width=20, font=("arial", 20, "bold"), command=self.funcao_cadastrar)
+        btn_confirmar.grid(row=5, column=0, columnspan=2, pady=25)
 
-    def add_function(self):
-        if self.roll_no_var.get()=="" or self.name_var.get()=="":
-            messagebox.showerror("Erro", "Adicione todas as informações corretas")
+    def funcao_cadastrar(self):
+        if self.var_matricula.get()=="" or self.var_nome.get()=="":
+            messagebox.showerror("Campos Vazios", "Por favor, preencha todos os campos obrigatórios")
         else:
             try:
-                self.db_function()
-                query = "insert into student values(%s,%s,%s,%s,%s)"
-                self.cursor.execute(query, (self.roll_no_var.get(), self.name_var.get(), self.fname_var.get(), self.subject_var.get(), self.grade_var.get()))
-                self.con.commit()
-                messagebox.showinfo("Sucesso", f"Aluno {self.name_var.get()} registrado com sucesso")
-                self.con.close()
-                self.add_f_frame.destroy()
-                self.show_all()
+                self.funcao_banco_dados()
+                comando_sql = "insert into estudante values(%s,%s,%s,%s,%s)"
+                self.cursor.execute(comando_sql, (self.var_matricula.get(), self.var_nome.get(), self.var_nome_pai.get(), self.var_disciplina.get(), self.var_nota.get()))
+                self.conexao.commit()
+                messagebox.showinfo("Sucesso", f"O estudante {self.var_nome.get()} foi registrado com sucesso!")
+                self.conexao.close()
+                self.quadro_cad_estudante.destroy()
+                self.mostrar_todos()
             except Exception as e:
-                messagebox.showerror("Error", f"Error: {e}")
+                messagebox.showerror("Erro SQL", f"Erro ao inserir dados: {e}")
 
-    # --- Funções para Busca ---
-    def search_frame_function(self):
-        self.search_f_frame = tk.Frame(self.root, bd=5, relief="raised", bg=self.color(150, 180, 255))
-        self.search_f_frame.place(x=(self.width//3)+80, y=100, width=self.width//3, height=350)
+    # --- Operação: BUSCA ---
+    def funcao_quadro_busca(self):
+        self.quadro_busca_f = tk.Frame(self.root, bd=5, relief="raised", bg=self.cor_rgb(150, 180, 255))
+        self.quadro_busca_f.place(x=(self.largura//3)+80, y=100, width=self.largura//3, height=350)
 
-        tk.Label(self.search_f_frame, text="Selecione a Opção:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=30)
-        self.search_opt = ttk.Combobox(self.search_f_frame, width=17, font=("arial", 15, "bold"), state="readonly")
-        self.search_opt['values'] = ("Número", "Nome", "Classe")
-        self.search_opt.grid(row=0, column=1, padx=10, pady=30)
-        self.search_opt.set("Selecione a Opção")
+        tk.Label(self.quadro_busca_f, text="Filtrar por:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=30)
+        self.busca_opcao = ttk.Combobox(self.quadro_busca_f, width=17, font=("arial", 15, "bold"), state="readonly")
+        self.busca_opcao['values'] = ("matricula", "nome", "disciplina")
+        self.busca_opcao.grid(row=0, column=1, padx=10, pady=30)
+        self.busca_opcao.set("Selecione Opção")
 
-        tk.Label(self.search_f_frame, text="Coloque o Valor:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=1, column=0, padx=20, pady=30)
-        self.search_val = tk.Entry(self.search_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.search_val.grid(row=1, column=1, padx=10, pady=30)
+        tk.Label(self.quadro_busca_f, text="Valor da Busca:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=1, column=0, padx=20, pady=30)
+        self.busca_valor = tk.Entry(self.quadro_busca_f, width=18, font=("arial", 15, "bold"), bd=3)
+        self.busca_valor.grid(row=1, column=1, padx=10, pady=30)
 
-        search_btn = tk.Button(self.search_f_frame, text="Busque", width=20, font=("arial", 20, "bold"), command=self.search_function)
-        search_btn.grid(row=2, column=0, columnspan=2, pady=30)
+        btn_pesquisar = tk.Button(self.quadro_busca_f, text="Pesquisar", width=20, font=("arial", 20, "bold"), command=self.funcao_pesquisar)
+        btn_pesquisar.grid(row=2, column=0, columnspan=2, pady=30)
 
-    def search_function(self):
+    def funcao_pesquisar(self):
         try:
-            self.db_function()
-            query = f"select * from aluno where {self.search_opt.get()} = %s"
-            self.cursor.execute(query, (self.search_val.get()))
-            rows = self.cursor.fetchall()
-            if len(rows)!=0:
-                self.table.delete(*self.table.get_children())
-                for row in rows:
-                    self.table.insert('', tk.END, values=row)
-                self.con.close()
-            self.search_f_frame.destroy()
+            self.funcao_banco_dados()
+            comando_sql = f"select * from estudante where {self.busca_opcao.get()} = %s"
+            self.cursor.execute(comando_sql, (self.busca_valor.get()))
+            linhas = self.cursor.fetchall()
+            if len(linhas)!=0:
+                self.tabela.delete(*self.tabela.get_children())
+                for linha in linhas:
+                    self.tabela.insert('', tk.END, values=linha)
+                self.conexao.close()
+            self.quadro_busca_f.destroy()
         except Exception as e:
-            messagebox.showerror("Erro", f"Error: {e}")
+            messagebox.showerror("Erro de Busca", f"Erro ao pesquisar estudante: {e}")
 
-    # --- Função Mostrar Todos ---
-    def show_all(self):
+    # --- Operação: LISTAR TODOS ---
+    def mostrar_todos(self):
         try:
-            self.db_function()
-            self.cursor.execute("select * from aluno")
-            rows = self.cursor.fetchall()
-            self.table.delete(*self.table.get_children())
-            for row in rows:
-                self.table.insert('', tk.END, values=row)
-            self.con.close()
+            self.funcao_banco_dados()
+            self.cursor.execute("select * from estudante")
+            linhas = self.cursor.fetchall()
+            self.tabela.delete(*self.tabela.get_children())
+            for linha in linhas:
+                self.tabela.insert('', tk.END, values=linha)
+            self.conexao.close()
         except Exception as e:
-            messagebox.showerror("Erro", f"Error: {e}")
+            messagebox.showerror("Erro de Visualização", f"Erro ao listar estudantes: {e}")
 
-    # --- Funções para Atualizar ---
-    def update_frame_function(self):
-        self.upd_f_frame = tk.Frame(self.root, bd=5, relief="raised", bg=self.color(150, 180, 255))
-        self.upd_f_frame.place(x=(self.width//3)+80, y=100, width=self.width//3, height=350)
+    # --- Operação: ATUALIZAR ---
+    def funcao_quadro_atualizar(self):
+        self.quadro_atua_f = tk.Frame(self.root, bd=5, relief="raised", bg=self.cor_rgb(150, 180, 255))
+        self.quadro_atua_f.place(x=(self.largura//3)+80, y=100, width=self.largura//3, height=350)
 
-        tk.Label(self.upd_f_frame, text="Selecione a área:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=20)
-        self.upd_opt = ttk.Combobox(self.upd_f_frame, width=17, font=("arial", 15, "bold"), state="readonly")
-        self.upd_opt['values'] = ("Nome", "Classe", "Turno")
-        self.upd_opt.grid(row=0, column=1, padx=10, pady=20)
+        tk.Label(self.quadro_atua_f, text="Campo a mudar:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=20)
+        self.atua_opcao = ttk.Combobox(self.quadro_atua_f, width=17, font=("arial", 15, "bold"), state="readonly")
+        self.atua_opcao['values'] = ("nome", "disciplina", "nota")
+        self.atua_opcao.grid(row=0, column=1, padx=10, pady=20)
 
-        tk.Label(self.upd_f_frame, text="Novo Valor:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=1, column=0, padx=20, pady=20)
-        self.upd_val = tk.Entry(self.upd_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.upd_val.grid(row=1, column=1, padx=10, pady=20)
+        tk.Label(self.quadro_atua_f, text="Novo Valor:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=1, column=0, padx=20, pady=20)
+        self.atua_valor = tk.Entry(self.quadro_atua_f, width=18, font=("arial", 15, "bold"), bd=3)
+        self.atua_valor.grid(row=1, column=1, padx=10, pady=20)
 
-        tk.Label(self.upd_f_frame, text="Número:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=2, column=0, padx=20, pady=20)
-        self.upd_roll = tk.Entry(self.upd_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.upd_roll.grid(row=2, column=1, padx=10, pady=20)
+        tk.Label(self.quadro_atua_f, text="Nº Matrícula:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=2, column=0, padx=20, pady=20)
+        self.atua_matricula = tk.Entry(self.quadro_atua_f, width=18, font=("arial", 15, "bold"), bd=3)
+        self.atua_matricula.grid(row=2, column=1, padx=10, pady=20)
 
-        upd_btn = tk.Button(self.upd_f_frame, text="Atualize", width=20, font=("arial", 20, "bold"), command=self.update_function)
-        upd_btn.grid(row=3, column=0, columnspan=2, pady=20)
+        btn_atualizar = tk.Button(self.quadro_atua_f, text="Atualizar", width=20, font=("arial", 20, "bold"), command=self.funcao_atualizar_registro)
+        btn_atualizar.grid(row=3, column=0, columnspan=2, pady=20)
 
-    def update_function(self):
+    def funcao_atualizar_registro(self):
         try:
-            self.db_function()
-            query = f"update aluno set {self.upd_opt.get()} = %s where numero = %s"
-            self.cursor.execute(query, (self.upd_val.get(), self.upd_roll.get()))
-            self.con.commit()
-            messagebox.showinfo("Successo", "Atualizado com Sucesso")
-            self.con.close()
-            self.upd_f_frame.destroy()
-            self.show_all()
+            self.funcao_banco_dados()
+            comando_sql = f"update estudante set {self.atua_opcao.get()} = %s where matricula = %s"
+            self.cursor.execute(comando_sql, (self.atua_valor.get(), self.atua_matricula.get()))
+            self.conexao.commit()
+            messagebox.showinfo("Sucesso", "Registro atualizado com sucesso!")
+            self.conexao.close()
+            self.quadro_atua_f.destroy()
+            self.mostrar_todos()
         except Exception as e:
-            messagebox.showerror("Erro", f"Error: {e}")
+            messagebox.showerror("Erro de Atualização", f"Erro ao atualizar registro: {e}")
 
-    # --- Funções para Remover ---
-    def del_frame_function(self):
-        self.del_f_frame = tk.Frame(self.root, bd=5, relief="raised", bg=self.color(150, 180, 255))
-        self.del_f_frame.place(x=(self.width//3)+80, y=100, width=self.width//3, height=250)
+    # --- Operação: EXCLUIR ---
+    def funcao_quadro_remover(self):
+        self.quadro_rem_f = tk.Frame(self.root, bd=5, relief="raised", bg=self.cor_rgb(150, 180, 255))
+        self.quadro_rem_f.place(x=(self.largura//3)+80, y=100, width=self.largura//3, height=250)
 
-        tk.Label(self.del_f_frame, text="Número:", bg=self.color(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=30)
-        self.del_roll = tk.Entry(self.del_f_frame, width=18, font=("arial", 15, "bold"), bd=3)
-        self.del_roll.grid(row=0, column=1, padx=10, pady=30)
+        tk.Label(self.quadro_rem_f, text="Nº Matrícula:", bg=self.cor_rgb(150, 180, 255), font=("arial", 15, "bold")).grid(row=0, column=0, padx=20, pady=30)
+        self.rem_matricula = tk.Entry(self.quadro_rem_f, width=18, font=("arial", 15, "bold"), bd=3)
+        self.rem_matricula.grid(row=0, column=1, padx=10, pady=30)
 
-        del_btn = tk.Button(self.del_f_frame, text="Apague", width=20, font=("arial", 20, "bold"), command=self.delete_function)
-        del_btn.grid(row=1, column=0, columnspan=2, pady=30)
+        btn_excluir = tk.Button(self.quadro_rem_f, text="Excluir", width=20, font=("arial", 20, "bold"), command=self.funcao_remover_registro)
+        btn_excluir.grid(row=1, column=0, columnspan=2, pady=30)
 
-    def delete_function(self):
+    def funcao_remover_registro(self):
         try:
-            self.db_function()
-            query = "delete from aluno where numero = %s"
-            self.cursor.execute(query, (self.del_roll.get()))
-            self.con.commit()
-            messagebox.showinfo("Successo", f"Aluno {self.del_roll.get()} removido")
-            self.con.close()
-            self.del_f_frame.destroy()
-            self.show_all()
+            self.funcao_banco_dados()
+            comando_sql = "delete from estudante where matricula = %s"
+            self.cursor.execute(comando_sql, (self.rem_matricula.get()))
+            self.conexao.commit()
+            messagebox.showinfo("Sucesso", f"Estudante de matrícula {self.rem_matricula.get()} foi removido.")
+            self.conexao.close()
+            self.quadro_rem_f.destroy()
+            self.mostrar_todos()
         except Exception as e:
-            messagebox.showerror("Erro", f"Error: {e}")
+            messagebox.showerror("Erro de Exclusão", f"Erro ao remover estudante: {e}")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    obj = Student(root)
-    root.mainloop()
+    janela = tk.Tk()
+    aplicativo = Estudante(janela)
+    janela.mainloop()
