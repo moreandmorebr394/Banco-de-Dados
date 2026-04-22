@@ -14,8 +14,8 @@ class SistemaFuncionario:
         self.raiz.geometry(f"{self.largura}x{self.altura}+0+0")
         
         # Paleta de Cores
-        self.cor_royal_blue = "#4169E1"
-        self.cor_quicksand = "#BD978E"
+        self.cor_royal_blue = "#112250"
+        self.cor_quicksand = "#C78950"
         self.cor_shellstone = "#E5DED1"
 
         # Título Principal
