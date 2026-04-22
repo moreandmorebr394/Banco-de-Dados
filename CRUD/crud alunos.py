@@ -69,7 +69,6 @@ class SistemaEstudante:
     def mascarar_cpf(self, cpf):
         return hashlib.sha256(cpf.encode()).hexdigest()
 
-    # --- CREATE (ADICIONAR) - MANTIDO CONFORME SOLICITADO ---
     def funcao_quadro_adicionar(self):
         self.janela_form = tk.Toplevel(self.raiz)
         self.janela_form.title("Novo Cadastro")
@@ -108,7 +107,6 @@ class SistemaEstudante:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao salvar: {e}")
 
-    # --- READ (BUSCAR) ---
     def funcao_quadro_busca(self):
         self.janela_busca = tk.Toplevel(self.raiz)
         self.janela_busca.title("Buscar Aluno")
@@ -139,28 +137,34 @@ class SistemaEstudante:
     def funcao_quadro_atualizar(self):
         self.janela_atua = tk.Toplevel(self.raiz)
         self.janela_atua.title("Editar Aluno")
-        self.janela_atua.geometry("450x450")
+        self.janela_atua.geometry("450x550") # Aumentado para comportar o novo campo
         self.janela_atua.config(bg=self.cor_quicksand)
 
         tk.Label(self.janela_atua, text="ID do Aluno para editar:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
         self.id_editar = tk.Entry(self.janela_atua)
         self.id_editar.pack()
 
-        tk.Label(self.janela_atua, text="Novo E-mail:", bg=self.cor_quicksand).pack(pady=5)
+        # Novo campo para Nome
+        tk.Label(self.janela_atua, text="Novo Nome:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
+        self.novo_nome = tk.Entry(self.janela_atua)
+        self.novo_nome.pack()
+
+        tk.Label(self.janela_atua, text="Novo E-mail:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
         self.novo_email = tk.Entry(self.janela_atua)
         self.novo_email.pack()
 
-        tk.Label(self.janela_atua, text="Novo Endereço:", bg=self.cor_quicksand).pack(pady=5)
+        tk.Label(self.janela_atua, text="Novo Endereço:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
         self.novo_endereco = tk.Entry(self.janela_atua)
         self.novo_endereco.pack()
 
-        tk.Button(self.janela_atua, text="Atualizar Dados", bg=self.cor_royal_blue, fg="white", command=self.executar_atualizacao).pack(pady=20)
+        tk.Button(self.janela_atua, text="Atualizar Dados", bg=self.cor_royal_blue, fg="white", font=("arial", 12, "bold"), command=self.executar_atualizacao).pack(pady=20)
 
     def executar_atualizacao(self):
         try:
             self.conectar_db()
-            query = "UPDATE aluno SET email=%s, endereco=%s WHERE id_aluno=%s"
-            self.cursor.execute(query, (self.novo_email.get(), self.novo_endereco.get(), self.id_editar.get()))
+            # Atualizado para incluir o campo 'nome'
+            query = "UPDATE aluno SET nome=%s, email=%s, endereco=%s WHERE id_aluno=%s"
+            self.cursor.execute(query, (self.novo_nome.get(), self.novo_email.get(), self.novo_endereco.get(), self.id_editar.get()))
             self.conexao.commit()
             self.conexao.close()
             messagebox.showinfo("Sucesso", "Registro atualizado!")
@@ -169,7 +173,6 @@ class SistemaEstudante:
         except Exception as e:
             messagebox.showerror("Erro", f"Falha ao atualizar: {e}")
 
-    # --- DELETE (REMOVER) ---
     def funcao_quadro_remover(self):
         self.janela_rem = tk.Toplevel(self.raiz)
         self.janela_rem.title("Remover Aluno")
