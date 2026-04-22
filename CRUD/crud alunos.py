@@ -14,9 +14,9 @@ class SistemaEstudante:
         self.raiz.geometry(f"{self.largura}x{self.altura}+0+0")
         
         # Cores solicitadas
-        self.cor_royal_blue = "#4169E1"
-        self.cor_quicksand = "#BD978E"
-        self.cor_shellstone = "#E5DED1"
+        self.cor_royal_blue = "#112250"
+        self.cor_quicksand = "#C78950"
+        self.cor_shellstone = "#D9CBC2"
 
         # Título Principal
         titulo = tk.Label(self.raiz, text="Gerenciamento de Dados do Aluno", bd=10, relief="flat", 
