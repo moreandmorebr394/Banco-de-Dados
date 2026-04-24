@@ -4,99 +4,538 @@ from tkinter import messagebox
 import pymysql
 import hashlib
 
+
 class SistemaEstudante:
+    # Paleta de cores (mantida do design original)
+    COR_ROYAL_BLUE = "#112250"
+    COR_QUICKSAND = "#E0BE7A"
+    COR_SHELLSTONE = "#D9CBC2"
+
+    # Tons derivados para a UI moderna
+    COR_FUNDO = "#F4EEE4"
+    COR_BRANCO = "#FFFFFF"
+    COR_TEXTO = "#1A1F36"
+    COR_TEXTO_SUAVE = "#5A6478"
+    COR_BORDA = "#CDBFB3"
+    COR_HOVER_SIDEBAR = "#1B3270"
+    COR_ATIVO_SIDEBAR = "#0B1838"
+    COR_SUCESSO = "#2E8B57"
+    COR_PERIGO = "#C0392B"
+    COR_LINHA_ALT = "#F1E8DB"
+
     def __init__(self, raiz):
         self.raiz = raiz
-        self.raiz.title("Sistema de Cadastro de Estudantes - CRUD Completo")
-        
+        self.raiz.title("Sistema Fácil — Cadastro de Estudantes")
+        self.raiz.configure(bg=self.COR_FUNDO)
+
+        # Dimensões
         self.largura = self.raiz.winfo_screenwidth()
         self.altura = self.raiz.winfo_screenheight()
         self.raiz.geometry(f"{self.largura}x{self.altura}+0+0")
-        
-        self.cor_royal_blue = "#112250"
-        self.cor_quicksand = "#E0BE7A"
-        self.cor_shellstone = "#D9CBC2"
+        self.raiz.minsize(1100, 650)
 
-        titulo = tk.Label(self.raiz, text="Gerenciamento de Dados do Aluno", bd=10, relief="flat",
-                         bg=self.cor_royal_blue, fg="white", font=("arial", 30, "bold"))
-        titulo.pack(side="top", fill="x")
+        self._configurar_estilos()
+        self._construir_layout()
+        self._tentar_carregar_inicial()
 
-        self.quadro_opcoes = tk.Frame(self.raiz, bd=5, relief="flat", bg=self.cor_quicksand)
-        self.quadro_opcoes.place(x=20, y=100, width=self.largura//4, height=self.altura-180)
-        self.quadro_opcoes.grid_columnconfigure(0, weight=1)
+    # ----------------------- Estilos -----------------------
+    def _configurar_estilos(self):
+        estilo = ttk.Style()
+        try:
+            estilo.theme_use("clam")
+        except Exception:
+            pass
 
-        botoes_texto = [
-            ("Novo Cadastro", self.funcao_quadro_adicionar),
-            ("Consultar Aluno", self.funcao_quadro_busca),
-            ("Editar Registro", self.funcao_quadro_atualizar),
-            ("Listar Todos", self.mostrar_todos),
-            ("Remover Registro", self.funcao_quadro_remover)
+        estilo.configure(
+            "Moderno.Treeview",
+            background=self.COR_BRANCO,
+            fieldbackground=self.COR_BRANCO,
+            foreground=self.COR_TEXTO,
+            rowheight=38,
+            font=("Segoe UI", 11),
+            borderwidth=0,
+            relief="flat",
+        )
+        estilo.configure(
+            "Moderno.Treeview.Heading",
+            background=self.COR_ROYAL_BLUE,
+            foreground="white",
+            font=("Segoe UI Semibold", 11),
+            padding=(10, 12),
+            borderwidth=0,
+            relief="flat",
+        )
+        estilo.map(
+            "Moderno.Treeview.Heading",
+            background=[("active", self.COR_HOVER_SIDEBAR)],
+        )
+        estilo.map(
+            "Moderno.Treeview",
+            background=[("selected", self.COR_QUICKSAND)],
+            foreground=[("selected", self.COR_ROYAL_BLUE)],
+        )
+
+        estilo.configure(
+            "Moderno.Vertical.TScrollbar",
+            background=self.COR_SHELLSTONE,
+            troughcolor=self.COR_FUNDO,
+            bordercolor=self.COR_FUNDO,
+            arrowcolor=self.COR_ROYAL_BLUE,
+        )
+
+    # ----------------------- Layout -----------------------
+    def _construir_layout(self):
+        principal = tk.Frame(self.raiz, bg=self.COR_FUNDO)
+        principal.pack(fill="both", expand=True)
+
+        self._construir_sidebar(principal)
+
+        conteudo = tk.Frame(principal, bg=self.COR_FUNDO)
+        conteudo.pack(side="left", fill="both", expand=True)
+
+        self._construir_topbar(conteudo)
+        self._construir_cards_resumo(conteudo)
+        self._construir_painel_tabela(conteudo)
+
+    def _construir_sidebar(self, parent):
+        sidebar = tk.Frame(parent, bg=self.COR_ROYAL_BLUE, width=260)
+        sidebar.pack(side="left", fill="y")
+        sidebar.pack_propagate(False)
+
+        # Marca
+        marca_wrap = tk.Frame(sidebar, bg=self.COR_ROYAL_BLUE)
+        marca_wrap.pack(fill="x", pady=(28, 30), padx=24)
+
+        logo_box = tk.Frame(marca_wrap, bg=self.COR_QUICKSAND, width=46, height=46)
+        logo_box.pack(side="left")
+        logo_box.pack_propagate(False)
+        tk.Label(
+            logo_box,
+            text="SE",
+            bg=self.COR_QUICKSAND,
+            fg=self.COR_ROYAL_BLUE,
+            font=("Segoe UI Black", 14),
+        ).pack(expand=True)
+
+        marca_texto = tk.Frame(marca_wrap, bg=self.COR_ROYAL_BLUE)
+        marca_texto.pack(side="left", padx=12)
+        tk.Label(
+            marca_texto,
+            text="Sistema Fácil",
+            bg=self.COR_ROYAL_BLUE,
+            fg="white",
+            font=("Segoe UI Semibold", 14),
+        ).pack(anchor="w")
+        tk.Label(
+            marca_texto,
+            text="Cadastro de Estudantes",
+            bg=self.COR_ROYAL_BLUE,
+            fg=self.COR_QUICKSAND,
+            font=("Segoe UI", 9),
+        ).pack(anchor="w")
+
+        # Separador
+        tk.Frame(sidebar, bg=self.COR_HOVER_SIDEBAR, height=1).pack(
+            fill="x", padx=20, pady=(0, 18)
+        )
+
+        tk.Label(
+            sidebar,
+            text="MENU",
+            bg=self.COR_ROYAL_BLUE,
+            fg=self.COR_QUICKSAND,
+            font=("Segoe UI Semibold", 9),
+        ).pack(anchor="w", padx=28, pady=(0, 10))
+
+        itens = [
+            ("\u2630  Listar Todos", self.mostrar_todos),
+            ("\u002B  Novo Cadastro", self.funcao_quadro_adicionar),
+            ("\U0001F50D  Consultar Aluno", self.funcao_quadro_busca),
+            ("\u270E  Editar Registro", self.funcao_quadro_atualizar),
+            ("\u2716  Remover Registro", self.funcao_quadro_remover),
+            ("\u21BB  Recarregar Dados", self.mostrar_todos),
         ]
 
-        for i, (texto, comando) in enumerate(botoes_texto):
-            tk.Button(self.quadro_opcoes, text=texto, bd=2, relief="raised", bg=self.cor_shellstone,
-                      width=18, font=("arial", 12, "bold"), command=comando).grid(row=i, column=0, padx=10, pady=20, sticky="n")
+        for texto, comando in itens:
+            btn = tk.Label(
+                sidebar,
+                text=texto,
+                bg=self.COR_ROYAL_BLUE,
+                fg="white",
+                font=("Segoe UI", 11),
+                anchor="w",
+                padx=28,
+                pady=12,
+                cursor="hand2",
+            )
+            btn.pack(fill="x", padx=12, pady=2)
+            self._aplicar_hover_sidebar(btn, comando)
 
-        self.quadro_visualizacao = tk.Frame(self.raiz, bd=5, relief="flat", bg=self.cor_shellstone)
-        self.quadro_visualizacao.place(x=(self.largura//4)+50, y=100, width=(self.largura//1.5), height=self.altura-180)
+        # Rodapé sidebar
+        rodape = tk.Frame(sidebar, bg=self.COR_ROYAL_BLUE)
+        rodape.pack(side="bottom", fill="x", pady=20, padx=24)
+        tk.Frame(rodape, bg=self.COR_HOVER_SIDEBAR, height=1).pack(fill="x", pady=(0, 14))
+        tk.Label(
+            rodape,
+            text="\u25CF  Conectado a sistema_facil",
+            bg=self.COR_ROYAL_BLUE,
+            fg=self.COR_QUICKSAND,
+            font=("Segoe UI", 9),
+        ).pack(anchor="w")
+        tk.Label(
+            rodape,
+            text="v2.0  •  MySQL",
+            bg=self.COR_ROYAL_BLUE,
+            fg="#8FA0C8",
+            font=("Segoe UI", 8),
+        ).pack(anchor="w", pady=(4, 0))
 
-        lbl_painel = tk.Label(self.quadro_visualizacao, text="Base de Dados de Alunos", font=("arial", 20, "bold"),
-                             bg=self.cor_shellstone, fg=self.cor_royal_blue)
-        lbl_painel.pack(side="top", fill="x", pady=10)
+    def _aplicar_hover_sidebar(self, widget, comando):
+        cor_normal = self.COR_ROYAL_BLUE
+        cor_hover = self.COR_HOVER_SIDEBAR
 
-        self.configurar_tabela()
+        def on_enter(_):
+            widget.configure(bg=cor_hover)
 
-    def conectar_db(self):
-        try:
-            self.conexao = pymysql.connect(host="localhost", user="root", password="", database="sistema_facil")
-            self.cursor = self.conexao.cursor()
-        except Exception as e:
-            messagebox.showerror("Erro", f"Falha na conexão: {e}")
+        def on_leave(_):
+            widget.configure(bg=cor_normal)
 
-    def configurar_tabela(self):
-        self.quadro_tab = tk.Frame(self.quadro_visualizacao, bd=2, relief="sunken")
-        self.quadro_tab.place(x=10, y=60, width=(self.largura//1.6), height=self.altura-300)
+        def on_click(_):
+            widget.configure(bg=self.COR_ATIVO_SIDEBAR)
+            self.raiz.after(120, lambda: widget.configure(bg=cor_hover))
+            comando()
+
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
+        widget.bind("<Button-1>", on_click)
+
+    def _construir_topbar(self, parent):
+        topbar = tk.Frame(parent, bg=self.COR_FUNDO)
+        topbar.pack(fill="x", padx=32, pady=(28, 10))
+
+        esquerda = tk.Frame(topbar, bg=self.COR_FUNDO)
+        esquerda.pack(side="left")
+        tk.Label(
+            esquerda,
+            text="Base de Dados de Alunos",
+            bg=self.COR_FUNDO,
+            fg=self.COR_ROYAL_BLUE,
+            font=("Segoe UI Semibold", 22),
+        ).pack(anchor="w")
+        tk.Label(
+            esquerda,
+            text="Cadastre, consulte, edite e remova estudantes da instituição",
+            bg=self.COR_FUNDO,
+            fg=self.COR_TEXTO_SUAVE,
+            font=("Segoe UI", 11),
+        ).pack(anchor="w", pady=(2, 0))
+
+        direita = tk.Frame(topbar, bg=self.COR_FUNDO)
+        direita.pack(side="right")
+
+        self._criar_botao_pill(
+            direita,
+            "+  Novo Cadastro",
+            self.COR_ROYAL_BLUE,
+            "white",
+            self.funcao_quadro_adicionar,
+        ).pack(side="right", padx=(10, 0))
+
+        self._criar_botao_pill(
+            direita,
+            "Atualizar Lista",
+            self.COR_QUICKSAND,
+            self.COR_ROYAL_BLUE,
+            self.mostrar_todos,
+        ).pack(side="right")
+
+    def _construir_cards_resumo(self, parent):
+        wrap = tk.Frame(parent, bg=self.COR_FUNDO)
+        wrap.pack(fill="x", padx=32, pady=(8, 16))
+
+        self.card_total = self._criar_card_metric(
+            wrap, "Total de Alunos", "—", self.COR_ROYAL_BLUE
+        )
+        self.card_total.pack(side="left", expand=True, fill="x", padx=(0, 12))
+
+        self.card_emails = self._criar_card_metric(
+            wrap, "Com E-mail Cadastrado", "—", self.COR_QUICKSAND
+        )
+        self.card_emails.pack(side="left", expand=True, fill="x", padx=6)
+
+        self.card_telefones = self._criar_card_metric(
+            wrap, "Com Telefone Cadastrado", "—", self.COR_SUCESSO
+        )
+        self.card_telefones.pack(side="left", expand=True, fill="x", padx=(12, 0))
+
+    def _criar_card_metric(self, parent, titulo, valor, cor_destaque):
+        card = tk.Frame(
+            parent,
+            bg=self.COR_BRANCO,
+            highlightthickness=1,
+            highlightbackground=self.COR_BORDA,
+        )
+        tk.Frame(card, bg=cor_destaque, height=3).pack(fill="x")
+
+        interior = tk.Frame(card, bg=self.COR_BRANCO)
+        interior.pack(fill="both", expand=True, padx=20, pady=18)
+
+        tk.Label(
+            interior,
+            text=titulo.upper(),
+            bg=self.COR_BRANCO,
+            fg=self.COR_TEXTO_SUAVE,
+            font=("Segoe UI Semibold", 9),
+        ).pack(anchor="w")
+
+        lbl_valor = tk.Label(
+            interior,
+            text=valor,
+            bg=self.COR_BRANCO,
+            fg=self.COR_ROYAL_BLUE,
+            font=("Segoe UI", 26, "bold"),
+        )
+        lbl_valor.pack(anchor="w", pady=(6, 0))
+
+        card.label_valor = lbl_valor
+        return card
+
+    def _construir_painel_tabela(self, parent):
+        painel = tk.Frame(
+            parent,
+            bg=self.COR_BRANCO,
+            highlightthickness=1,
+            highlightbackground=self.COR_BORDA,
+        )
+        painel.pack(fill="both", expand=True, padx=32, pady=(0, 28))
+
+        # Cabeçalho do painel
+        cab = tk.Frame(painel, bg=self.COR_BRANCO)
+        cab.pack(fill="x", padx=20, pady=(18, 10))
+
+        tk.Label(
+            cab,
+            text="Registros de Estudantes",
+            bg=self.COR_BRANCO,
+            fg=self.COR_ROYAL_BLUE,
+            font=("Segoe UI Semibold", 14),
+        ).pack(side="left")
+
+        # Caixa de busca rápida
+        busca_wrap = tk.Frame(
+            cab,
+            bg=self.COR_SHELLSTONE,
+            highlightthickness=1,
+            highlightbackground=self.COR_BORDA,
+        )
+        busca_wrap.pack(side="right")
+
+        tk.Label(
+            busca_wrap,
+            text="\U0001F50D",
+            bg=self.COR_SHELLSTONE,
+            fg=self.COR_TEXTO_SUAVE,
+            font=("Segoe UI", 11),
+        ).pack(side="left", padx=(10, 4), pady=6)
+
+        self.var_busca = tk.StringVar()
+        self.var_busca.trace_add("write", lambda *a: self._filtrar_tabela())
+        entrada_busca = tk.Entry(
+            busca_wrap,
+            textvariable=self.var_busca,
+            bd=0,
+            bg=self.COR_SHELLSTONE,
+            fg=self.COR_TEXTO,
+            font=("Segoe UI", 10),
+            width=28,
+            relief="flat",
+        )
+        entrada_busca.pack(side="left", padx=(0, 10), pady=8, ipady=2)
+
+        # Container da tabela com scrollbar
+        tabela_wrap = tk.Frame(painel, bg=self.COR_BRANCO)
+        tabela_wrap.pack(fill="both", expand=True, padx=20, pady=(4, 18))
 
         colunas = ("id", "nome", "email", "endereco", "cpf", "telefone")
-        self.tabela = ttk.Treeview(self.quadro_tab, columns=colunas, show="headings")
-        
-        cabecalhos = {"id": "ID", "nome": "Nome", "email": "Email", "endereco": "Endereço", "cpf": "CPF (Hash)", "telefone": "Telefone"}
-        for col, texto in cabecalhos.items():
-            self.tabela.heading(col, text=texto)
-            self.tabela.column(col, width=100, anchor="center")
-        self.tabela.pack(fill="both", expand=1)
+        cabecalhos = ["ID", "Nome", "E-mail", "Endereço", "CPF (Hash)", "Telefone"]
+        larguras = [60, 200, 230, 230, 180, 140]
+
+        scroll_y = ttk.Scrollbar(
+            tabela_wrap, orient="vertical", style="Moderno.Vertical.TScrollbar"
+        )
+        scroll_y.pack(side="right", fill="y")
+
+        self.tabela = ttk.Treeview(
+            tabela_wrap,
+            columns=colunas,
+            show="headings",
+            style="Moderno.Treeview",
+            yscrollcommand=scroll_y.set,
+        )
+        for col, cab_txt, larg in zip(colunas, cabecalhos, larguras):
+            self.tabela.heading(col, text=cab_txt)
+            self.tabela.column(col, width=larg, anchor="w", stretch=True)
+
+        self.tabela.tag_configure("par", background=self.COR_BRANCO)
+        self.tabela.tag_configure("impar", background=self.COR_LINHA_ALT)
+
+        self.tabela.pack(fill="both", expand=True)
+        scroll_y.config(command=self.tabela.yview)
+
+        # Rodapé do painel
+        rodape = tk.Frame(painel, bg=self.COR_BRANCO)
+        rodape.pack(fill="x", padx=20, pady=(0, 14))
+
+        self.lbl_status = tk.Label(
+            rodape,
+            text="Aguardando dados...",
+            bg=self.COR_BRANCO,
+            fg=self.COR_TEXTO_SUAVE,
+            font=("Segoe UI", 10),
+        )
+        self.lbl_status.pack(side="left")
+
+    # ----------------------- Botões pill -----------------------
+    def _criar_botao_pill(self, parent, texto, cor_bg, cor_fg, comando):
+        btn = tk.Label(
+            parent,
+            text=f"  {texto}  ",
+            bg=cor_bg,
+            fg=cor_fg,
+            font=("Segoe UI Semibold", 11),
+            padx=18,
+            pady=10,
+            cursor="hand2",
+        )
+
+        def escurecer(cor_hex, fator=0.88):
+            cor_hex = cor_hex.lstrip("#")
+            r, g, b = int(cor_hex[0:2], 16), int(cor_hex[2:4], 16), int(cor_hex[4:6], 16)
+            r, g, b = int(r * fator), int(g * fator), int(b * fator)
+            return f"#{r:02x}{g:02x}{b:02x}"
+
+        cor_hover = escurecer(cor_bg)
+        btn.bind("<Enter>", lambda _: btn.configure(bg=cor_hover))
+        btn.bind("<Leave>", lambda _: btn.configure(bg=cor_bg))
+        btn.bind("<Button-1>", lambda _: comando())
+        return btn
+
+    # ----------------------- Banco -----------------------
+    def conectar_db(self):
+        self.conexao = pymysql.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="sistema_facil",
+        )
+        self.cursor = self.conexao.cursor()
 
     def mascarar_cpf(self, cpf):
         return hashlib.sha256(cpf.encode()).hexdigest()
 
-    def funcao_quadro_adicionar(self):
-        self.janela_form = tk.Toplevel(self.raiz)
-        self.janela_form.title("Novo Cadastro")
-        self.janela_form.geometry("450x500")
-        self.janela_form.config(bg=self.cor_quicksand)
+    def _tentar_carregar_inicial(self):
+        self.raiz.after(200, self._carregar_silencioso)
 
-        labels = ["Nome", "Email", "Endereço", "CPF", "Telefone"]
+    def _carregar_silencioso(self):
+        try:
+            self.mostrar_todos()
+        except Exception:
+            self.lbl_status.configure(
+                text="Não foi possível carregar dados. Verifique a conexão com o banco."
+            )
+
+    # ----------------------- CREATE -----------------------
+    def funcao_quadro_adicionar(self):
+        janela = self._criar_modal("Novo Cadastro de Aluno", 520, 600)
+        self.janela_form = janela
+
+        self._titulo_modal(
+            janela,
+            "Novo Cadastro",
+            "Preencha os dados abaixo para registrar um novo aluno.",
+        )
+
+        form = tk.Frame(janela, bg=self.COR_BRANCO)
+        form.pack(fill="both", expand=True, padx=36, pady=(10, 20))
+
+        campos = [
+            ("Nome completo", "nome"),
+            ("E-mail", "email"),
+            ("Endereço", "endereco"),
+            ("CPF", "cpf"),
+            ("Telefone", "telefone"),
+        ]
         self.entradas = {}
 
-        for i, texto in enumerate(labels):
-            tk.Label(self.janela_form, text=f"{texto}:", bg=self.cor_quicksand, font=("arial", 12, "bold")).grid(row=i, column=0, padx=20, pady=15)
-            ent = tk.Entry(self.janela_form, font=("arial", 12), bd=2)
-            ent.grid(row=i, column=1, padx=10, pady=15)
-            chave = texto.lower().replace(" ", "_").replace("é", "e").replace("ç", "c").replace("õ", "o")
-            self.entradas[chave] = ent
+        for label, chave in campos:
+            self._campo_form(form, label, chave, self.entradas)
 
-        btn_salvar = tk.Button(self.janela_form, text="Salvar Cadastro", bg=self.cor_royal_blue, fg="white",
-                              font=("arial", 12, "bold"), command=self.salvar_dados)
-        btn_salvar.grid(row=len(labels), column=0, columnspan=2, pady=20)
+        botoes = tk.Frame(janela, bg=self.COR_BRANCO)
+        botoes.pack(fill="x", padx=36, pady=(0, 24))
+
+        self._criar_botao_pill(
+            botoes, "Cancelar", self.COR_SHELLSTONE, self.COR_ROYAL_BLUE, janela.destroy
+        ).pack(side="right", padx=(8, 0))
+        self._criar_botao_pill(
+            botoes,
+            "Salvar Cadastro",
+            self.COR_ROYAL_BLUE,
+            "white",
+            self.salvar_dados,
+        ).pack(side="right")
+
+    def _campo_form(self, parent, label, chave, store):
+        wrap = tk.Frame(parent, bg=self.COR_BRANCO)
+        wrap.pack(fill="x", pady=(6, 10))
+
+        tk.Label(
+            wrap,
+            text=label.upper(),
+            bg=self.COR_BRANCO,
+            fg=self.COR_TEXTO_SUAVE,
+            font=("Segoe UI Semibold", 9),
+        ).pack(anchor="w", pady=(0, 4))
+
+        moldura = tk.Frame(
+            wrap,
+            bg=self.COR_FUNDO,
+            highlightthickness=1,
+            highlightbackground=self.COR_BORDA,
+        )
+        moldura.pack(fill="x")
+
+        ent = tk.Entry(
+            moldura,
+            font=("Segoe UI", 11),
+            bd=0,
+            bg=self.COR_FUNDO,
+            fg=self.COR_TEXTO,
+            relief="flat",
+            insertbackground=self.COR_ROYAL_BLUE,
+        )
+        ent.pack(fill="x", padx=12, ipady=8)
+
+        ent.bind(
+            "<FocusIn>",
+            lambda _e: moldura.configure(highlightbackground=self.COR_QUICKSAND),
+        )
+        ent.bind(
+            "<FocusOut>",
+            lambda _e: moldura.configure(highlightbackground=self.COR_BORDA),
+        )
+
+        store[chave] = ent
 
     def salvar_dados(self):
         try:
             self.conectar_db()
             query = "INSERT INTO aluno (nome, email, endereco, CPF, telefone) VALUES (%s, %s, %s, %s, %s)"
             valores = (
-                self.entradas['nome'].get(), self.entradas['email'].get(),
-                self.entradas['endereco'].get(), self.mascarar_cpf(self.entradas['cpf'].get()),
-                self.entradas['telefone'].get()
+                self.entradas["nome"].get(),
+                self.entradas["email"].get(),
+                self.entradas["endereco"].get(),
+                self.mascarar_cpf(self.entradas["cpf"].get()),
+                self.entradas["telefone"].get(),
             )
             self.cursor.execute(query, valores)
             self.conexao.commit()
@@ -107,64 +546,107 @@ class SistemaEstudante:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao salvar: {e}")
 
+    # ----------------------- BUSCA -----------------------
     def funcao_quadro_busca(self):
-        self.janela_busca = tk.Toplevel(self.raiz)
-        self.janela_busca.title("Buscar Aluno")
-        self.janela_busca.geometry("400x300")
-        self.janela_busca.config(bg=self.cor_quicksand)
+        janela = self._criar_modal("Buscar Aluno", 460, 320)
+        self.janela_busca = janela
 
-        tk.Label(self.janela_busca, text="Buscar por Nome:", bg=self.cor_quicksand, font=("arial", 12, "bold")).pack(pady=10)
-        self.ent_busca_nome = tk.Entry(self.janela_busca, font=("arial", 12))
-        self.ent_busca_nome.pack(pady=5)
+        self._titulo_modal(
+            janela,
+            "Consultar Aluno",
+            "Digite parte do nome para localizar registros na base.",
+        )
 
-        tk.Button(self.janela_busca, text="Pesquisar", bg=self.cor_royal_blue, fg="white", command=self.executar_busca).pack(pady=20)
+        form = tk.Frame(janela, bg=self.COR_BRANCO)
+        form.pack(fill="both", expand=True, padx=36, pady=(10, 0))
+
+        store = {}
+        self._campo_form(form, "Buscar por nome", "nome", store)
+        self.ent_busca_nome = store["nome"]
+
+        botoes = tk.Frame(janela, bg=self.COR_BRANCO)
+        botoes.pack(fill="x", padx=36, pady=20)
+
+        self._criar_botao_pill(
+            botoes, "Cancelar", self.COR_SHELLSTONE, self.COR_ROYAL_BLUE, janela.destroy
+        ).pack(side="right", padx=(8, 0))
+        self._criar_botao_pill(
+            botoes,
+            "Pesquisar",
+            self.COR_ROYAL_BLUE,
+            "white",
+            self.executar_busca,
+        ).pack(side="right")
 
     def executar_busca(self):
         try:
             self.conectar_db()
             query = "SELECT * FROM aluno WHERE nome LIKE %s"
-            self.cursor.execute(query, (f"%{self.ent_busca_nome.get()}%"))
+            self.cursor.execute(query, (f"%{self.ent_busca_nome.get()}%",))
             linhas = self.cursor.fetchall()
-            self.tabela.delete(*self.tabela.get_children())
-            for linha in linhas:
-                self.tabela.insert('', tk.END, values=linha)
+            self._dados_atuais = list(linhas)
+            self._popular_tabela(self._dados_atuais)
             self.conexao.close()
+            self._atualizar_cards(self._dados_atuais)
+            self.lbl_status.configure(
+                text=f"{len(self._dados_atuais)} resultado(s) encontrado(s)."
+            )
             self.janela_busca.destroy()
         except Exception as e:
             messagebox.showerror("Erro", f"Busca falhou: {e}")
 
-    # --- UPDATE (ATUALIZAR) ---
+    # ----------------------- UPDATE -----------------------
     def funcao_quadro_atualizar(self):
-        self.janela_atua = tk.Toplevel(self.raiz)
-        self.janela_atua.title("Editar Aluno")
-        self.janela_atua.geometry("450x550") # Aumentado para comportar o novo campo
-        self.janela_atua.config(bg=self.cor_quicksand)
+        janela = self._criar_modal("Editar Registro de Aluno", 520, 580)
+        self.janela_atua = janela
 
-        tk.Label(self.janela_atua, text="ID do Aluno para editar:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
-        self.id_editar = tk.Entry(self.janela_atua)
-        self.id_editar.pack()
+        self._titulo_modal(
+            janela,
+            "Editar Registro",
+            "Informe o ID do aluno e os novos dados que deseja atualizar.",
+        )
 
-        # Novo campo para Nome
-        tk.Label(self.janela_atua, text="Novo Nome:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
-        self.novo_nome = tk.Entry(self.janela_atua)
-        self.novo_nome.pack()
+        form = tk.Frame(janela, bg=self.COR_BRANCO)
+        form.pack(fill="both", expand=True, padx=36, pady=(10, 20))
 
-        tk.Label(self.janela_atua, text="Novo E-mail:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
-        self.novo_email = tk.Entry(self.janela_atua)
-        self.novo_email.pack()
+        store = {}
+        self._campo_form(form, "ID do Aluno", "id", store)
+        self._campo_form(form, "Novo Nome", "nome", store)
+        self._campo_form(form, "Novo E-mail", "email", store)
+        self._campo_form(form, "Novo Endereço", "endereco", store)
 
-        tk.Label(self.janela_atua, text="Novo Endereço:", bg=self.cor_quicksand, font=("arial", 11, "bold")).pack(pady=5)
-        self.novo_endereco = tk.Entry(self.janela_atua)
-        self.novo_endereco.pack()
+        self.id_editar = store["id"]
+        self.novo_nome = store["nome"]
+        self.novo_email = store["email"]
+        self.novo_endereco = store["endereco"]
 
-        tk.Button(self.janela_atua, text="Atualizar Dados", bg=self.cor_royal_blue, fg="white", font=("arial", 12, "bold"), command=self.executar_atualizacao).pack(pady=20)
+        botoes = tk.Frame(janela, bg=self.COR_BRANCO)
+        botoes.pack(fill="x", padx=36, pady=(0, 24))
+
+        self._criar_botao_pill(
+            botoes, "Cancelar", self.COR_SHELLSTONE, self.COR_ROYAL_BLUE, janela.destroy
+        ).pack(side="right", padx=(8, 0))
+        self._criar_botao_pill(
+            botoes,
+            "Atualizar Dados",
+            self.COR_ROYAL_BLUE,
+            "white",
+            self.executar_atualizacao,
+        ).pack(side="right")
 
     def executar_atualizacao(self):
         try:
             self.conectar_db()
-            # Atualizado para incluir o campo 'nome'
             query = "UPDATE aluno SET nome=%s, email=%s, endereco=%s WHERE id_aluno=%s"
-            self.cursor.execute(query, (self.novo_nome.get(), self.novo_email.get(), self.novo_endereco.get(), self.id_editar.get()))
+            self.cursor.execute(
+                query,
+                (
+                    self.novo_nome.get(),
+                    self.novo_email.get(),
+                    self.novo_endereco.get(),
+                    self.id_editar.get(),
+                ),
+            )
             self.conexao.commit()
             self.conexao.close()
             messagebox.showinfo("Sucesso", "Registro atualizado!")
@@ -173,23 +655,44 @@ class SistemaEstudante:
         except Exception as e:
             messagebox.showerror("Erro", f"Falha ao atualizar: {e}")
 
+    # ----------------------- DELETE -----------------------
     def funcao_quadro_remover(self):
-        self.janela_rem = tk.Toplevel(self.raiz)
-        self.janela_rem.title("Remover Aluno")
-        self.janela_rem.geometry("300x200")
-        self.janela_rem.config(bg=self.cor_quicksand)
+        janela = self._criar_modal("Remover Aluno", 420, 320)
+        self.janela_rem = janela
 
-        tk.Label(self.janela_rem, text="ID para Excluir:", bg=self.cor_quicksand, font=("arial", 12, "bold")).pack(pady=20)
-        self.ent_id_rem = tk.Entry(self.janela_rem, font=("arial", 12))
-        self.ent_id_rem.pack()
+        self._titulo_modal(
+            janela,
+            "Remover Registro",
+            "Esta ação é permanente. Confirme o ID antes de prosseguir.",
+            cor_destaque=self.COR_PERIGO,
+        )
 
-        tk.Button(self.janela_rem, text="Confirmar Exclusão", bg="red", fg="white", command=self.executar_remocao).pack(pady=20)
+        form = tk.Frame(janela, bg=self.COR_BRANCO)
+        form.pack(fill="both", expand=True, padx=36, pady=(10, 0))
+
+        store = {}
+        self._campo_form(form, "ID para excluir", "id", store)
+        self.ent_id_rem = store["id"]
+
+        botoes = tk.Frame(janela, bg=self.COR_BRANCO)
+        botoes.pack(fill="x", padx=36, pady=20)
+
+        self._criar_botao_pill(
+            botoes, "Cancelar", self.COR_SHELLSTONE, self.COR_ROYAL_BLUE, janela.destroy
+        ).pack(side="right", padx=(8, 0))
+        self._criar_botao_pill(
+            botoes,
+            "Confirmar Exclusão",
+            self.COR_PERIGO,
+            "white",
+            self.executar_remocao,
+        ).pack(side="right")
 
     def executar_remocao(self):
         try:
             self.conectar_db()
             query = "DELETE FROM aluno WHERE id_aluno=%s"
-            self.cursor.execute(query, (self.ent_id_rem.get()))
+            self.cursor.execute(query, (self.ent_id_rem.get(),))
             self.conexao.commit()
             self.conexao.close()
             messagebox.showinfo("Aviso", "Aluno removido com sucesso!")
@@ -198,17 +701,98 @@ class SistemaEstudante:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao excluir: {e}")
 
+    # ----------------------- READ -----------------------
     def mostrar_todos(self):
         try:
             self.conectar_db()
             self.cursor.execute("SELECT * FROM aluno")
             linhas = self.cursor.fetchall()
-            self.tabela.delete(*self.tabela.get_children())
-            for linha in linhas:
-                self.tabela.insert('', tk.END, values=linha)
+            self._dados_atuais = list(linhas)
+            self._popular_tabela(self._dados_atuais)
             self.conexao.close()
+            self._atualizar_cards(self._dados_atuais)
+            self.lbl_status.configure(
+                text=f"{len(self._dados_atuais)} aluno(s) carregado(s)."
+            )
         except Exception as e:
-            print(f"Erro ao listar: {e}")
+            self.lbl_status.configure(text=f"Erro ao listar: {e}")
+
+    def _popular_tabela(self, linhas):
+        self.tabela.delete(*self.tabela.get_children())
+        for i, linha in enumerate(linhas):
+            tag = "par" if i % 2 == 0 else "impar"
+            self.tabela.insert("", tk.END, values=linha, tags=(tag,))
+
+    def _filtrar_tabela(self):
+        termo = self.var_busca.get().strip().lower()
+        if not hasattr(self, "_dados_atuais"):
+            return
+        if not termo:
+            self._popular_tabela(self._dados_atuais)
+            self.lbl_status.configure(
+                text=f"{len(self._dados_atuais)} aluno(s) carregado(s)."
+            )
+            return
+        filtradas = [
+            l for l in self._dados_atuais if any(termo in str(c).lower() for c in l)
+        ]
+        self._popular_tabela(filtradas)
+        self.lbl_status.configure(
+            text=f"{len(filtradas)} resultado(s) para \"{termo}\"."
+        )
+
+    def _atualizar_cards(self, linhas):
+        total = len(linhas)
+        # Considerando colunas: id, nome, email, endereco, cpf, telefone
+        com_email = sum(1 for l in linhas if len(l) > 2 and l[2])
+        com_telefone = sum(1 for l in linhas if len(l) > 5 and l[5])
+        self.card_total.label_valor.configure(text=str(total))
+        self.card_emails.label_valor.configure(text=str(com_email))
+        self.card_telefones.label_valor.configure(text=str(com_telefone))
+
+    # ----------------------- Modal helpers -----------------------
+    def _criar_modal(self, titulo, largura, altura):
+        janela = tk.Toplevel(self.raiz)
+        janela.title(titulo)
+        janela.configure(bg=self.COR_BRANCO)
+        janela.transient(self.raiz)
+        janela.grab_set()
+        janela.resizable(False, False)
+
+        self.raiz.update_idletasks()
+        x = self.raiz.winfo_rootx() + (self.raiz.winfo_width() - largura) // 2
+        y = self.raiz.winfo_rooty() + (self.raiz.winfo_height() - altura) // 2
+        janela.geometry(f"{largura}x{altura}+{max(x, 0)}+{max(y, 0)}")
+        return janela
+
+    def _titulo_modal(self, parent, titulo, subtitulo, cor_destaque=None):
+        cor_destaque = cor_destaque or self.COR_ROYAL_BLUE
+        cabecalho = tk.Frame(parent, bg=self.COR_BRANCO)
+        cabecalho.pack(fill="x", padx=36, pady=(28, 0))
+
+        tk.Frame(cabecalho, bg=cor_destaque, width=4, height=34).pack(
+            side="left", padx=(0, 12)
+        )
+
+        textos = tk.Frame(cabecalho, bg=self.COR_BRANCO)
+        textos.pack(side="left", fill="x", expand=True)
+        tk.Label(
+            textos,
+            text=titulo,
+            bg=self.COR_BRANCO,
+            fg=cor_destaque,
+            font=("Segoe UI Semibold", 16),
+        ).pack(anchor="w")
+        tk.Label(
+            textos,
+            text=subtitulo,
+            bg=self.COR_BRANCO,
+            fg=self.COR_TEXTO_SUAVE,
+            font=("Segoe UI", 10),
+            wraplength=400,
+            justify="left",
+        ).pack(anchor="w", pady=(2, 0))
+
 
 if __name__ == "__main__":
     janela = tk.Tk()
